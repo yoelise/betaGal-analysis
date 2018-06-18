@@ -1,0 +1,74 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This code imports, analyzes, and plots data from a multiple replcicates of beta-galactosidase assays. This analysis is for experiments examining beta-galactosidase activity as a function of RpoS level.
+
+Before running this code, you must have followed the directions and run the code in "analysis of single beta-gal experiment.Rmd" on every file you intend analyze here. 
+
+```{r, message=FALSE}
+library(readxl)
+library(tidyverse)
+source("betaGalAnalysisFunctions.R")
+theme_set(theme_classic())
+
+fileNames <- c("6-6-18 LB32_LB73.xlsx","6-6-18 LB32_LB73 fake data for testing.xlsx")
+
+processedFiles <- map(fileNames, meanExpressionOneReplicate)
+
+combinedData <- bind_rows(processedFiles)
+```
+
+```{r}
+ggplot(combinedData) + geom_point(aes(x=RpoS, y=meanExpression)) + facet_grid(.~strain) 
+```
+
+Plot mean ± SE for each RpoS level
+```{r}
+dayMeans <- combinedData %>% 
+              group_by(strain, RpoS) %>% 
+              summarise(meanAcrossDays = mean(meanExpression), sdAcrossDays = sd(meanExpression)/sqrt(length(meanExpression))) %>%
+              mutate(upperErrorBar = meanAcrossDays + sdAcrossDays, lowerErrorBar = meanAcrossDays - sdAcrossDays)
+
+ggplot(dayMeans) + 
+  geom_point(aes(x = RpoS, y = meanAcrossDays)) + 
+  geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
+  facet_grid(.~strain)
+
+  
+```
+##Sensitivity
+
+This section is specific for analyzing the sensitivity of a promoter. It requires three RpoS levels.
+
+This function expects three RpoS levels, so for this example I'll subset out some, since we have five.
+
+```{r}
+dataForSensitivity <- combinedData %>% 
+                        filter(RpoS == 0 | RpoS == 19 | RpoS == 94) 
+```
+
+
+Calculate sensitivity of a promoter. 
+```{r}
+sensitivities <- dataForSensitivity %>% 
+                  group_by(strain, date, experimenter) %>%
+                  summarise(sensitivity = calculateSingleSens(RpoS, meanExpression))
+```
+
+
+Plot the data with a line to illustrate null expectation used to assess sensitivity. 
+
+If you designed your experiment with only three RpoS levels, delete the the `filter` step. Note that we have to go back a step to use use the `dayMeans` tibble.
+```{r}
+dayMeans %>% 
+  filter(RpoS == 0 | RpoS == 19 | RpoS == 94) %>% 
+  ggplot() + 
+  geom_point(aes(x = RpoS, y = meanAcrossDays)) + 
+  geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
+  facet_grid(.~strain)
+                 
+```
+
+
