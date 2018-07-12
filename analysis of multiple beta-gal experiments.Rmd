@@ -1,11 +1,13 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 This code imports, analyzes, and plots data from a multiple replcicates of beta-galactosidase assays. This analysis is for experiments examining beta-galactosidase activity as a function of RpoS level.
 
-Before running this code, you must have followed the directions and run the code in "analysis of single beta-gal experiment.Rmd" on every file you intend analyze here. 
+Before running this code, you must have followed the directions and run the code in `analysis of single beta-gal experiment.Rmd` on every file you intend analyze here. 
 
 ```{r, message=FALSE}
 library(readxl)
@@ -13,7 +15,7 @@ library(tidyverse)
 source("betaGalAnalysisFunctions.R")
 theme_set(theme_classic())
 
-fileNames <- c("6-6-18 LB32_LB73.xlsx","6-6-18 LB32_LB73 fake data for testing.xlsx")
+fileNames <- c("sampleData/6-6-18 LB32_LB73.xlsx","sampleData/6-6-18 LB32_LB73 fake data for testing.xlsx")
 
 processedFiles <- map(fileNames, meanExpressionOneReplicate)
 
@@ -60,14 +62,32 @@ sensitivities <- dataForSensitivity %>%
 
 Plot the data with a line to illustrate null expectation used to assess sensitivity. 
 
+
+```{r}
+segmentEnds <- dayMeans %>%
+                filter(RpoS == 0 | RpoS == 94) %>%
+                group_by(strain) %>%
+                summarise(
+                  RpoS_min = min(RpoS),
+                  RpoS_max = max(RpoS),
+                  expression_min = min(meanAcrossDays),
+                  expression_max = max(meanAcrossDays)
+                  )
+  
+```
+
+
 If you designed your experiment with only three RpoS levels, delete the the `filter` step. Note that we have to go back a step to use use the `dayMeans` tibble.
 ```{r}
 dayMeans %>% 
   filter(RpoS == 0 | RpoS == 19 | RpoS == 94) %>% 
   ggplot() + 
-  geom_point(aes(x = RpoS, y = meanAcrossDays)) + 
+  geom_point(aes(x = RpoS, y = meanAcrossDays, size = 4), show.legend = FALSE) + 
   geom_errorbar(aes(x = RpoS, y = meanAcrossDays, ymax = upperErrorBar, ymin = lowerErrorBar)) + 
-  facet_grid(.~strain)
+  facet_grid(.~strain) +
+  geom_segment(data = segmentEnds, mapping = aes(x = RpoS_min, xend = RpoS_max, y = expression_min, yend = expression_max)) +
+  labs(x = "% of wild-type RpoS", y = "LacZ expression (Miller Units)")
+
                  
 ```
 
