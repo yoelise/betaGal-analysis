@@ -16,6 +16,8 @@ Before importing into R, you need to do some preprocessing of the Excel file:
 
 Leave Sheet 1 as it is.
 On Sheet2, copy and paste the OD420 data (i.e. the beta-gal assay itself). Include the whole matrix, even though we won't use most of it in R.
+Edit the title of column E to be "Blank 420"
+
 Add seven more columns immediately to the right: experimenter, date, strain, RpoS, dilutionFactor, volumeAssayed, reactionTime. (note the capitalization and spaces)
 
 Fill in **each** cell in these seven columns:  
@@ -30,6 +32,7 @@ Fill in **each** cell in these seven columns:
 
 On Sheet3, copy and paste the OD600 data (i.e. the cell densities).
 Add columns 1-5 above (experimenter, date, strain, RpoS, dilution factor) immediately to the right of the pasted data, with the exact same rules as above. The first four will be identical if you layed our your plate the same, but dilution factor will not. It is typically 10 for stationary phase cells.
+Edit the title of column E to be "Blank 600"
 
 Once you think you are done, *double-check everything*. Errors in data entry will mess everything else up.
 
@@ -51,7 +54,7 @@ source("betaGalAnalysisFunctions.R")
 ###To start the analysis, read in the data.
 
 ```{r}
-fileName <- "sampleData/6-6-18 LB32_LB73.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
+fileName <- "myData/EMSM7,8 06-14-22 Bgal.xlsx" #Enter your Excel file here. Remember that tab completion will help you get the path & name correct
 OD420data <- read_excel(fileName, sheet = 2)
 OD600data <- read_excel(fileName, sheet = 3)
 ```
